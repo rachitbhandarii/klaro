@@ -1,0 +1,45 @@
+{
+  "query": "russia don think biden",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://apnews.com/article/russia-putin-biden-trump-fb2fece0be7685624a3e3e379a8a3bd3",
+      "title": "Putin says Russia prefers Biden to Trump - AP News",
+      "content": "President Vladimir Putin said that Russia would prefer to see US President Joe Biden win a second term, describing him as more experienced and predictable than",
+      "score": 0.74385756,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.reddit.com/r/AskARussian/comments/178scnl/what_do_russians_think_of_joe_biden/",
+      "title": "What do Russians think of Joe Biden? : r/AskARussian - Reddit",
+      "content": "I am russian I don't really care about Joe Biden, just mildly surprised that there is serious talk about him becoming a president again",
+      "score": 0.6246834,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.quora.com/What-do-Russians-chiefly-think-of-President-Biden-What-do-they-think-of-Trump",
+      "title": "What do Russians chiefly think of President Biden? What do ... - Quora",
+      "content": "What do Russians think of Joe Biden? I don't expect the radical change of policies towards Russia from Biden although it has to become more",
+      "score": 0.56661874,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=SylQNXnUnLc",
+      "title": "Putin replies to Biden's \"rude\" comment about him - YouTube",
+      "content": "Russian President Vladimir Putin said that Joe Biden's \"crazy SOB\" remark showed why the Kremlin felt that for Russia, Biden would be a",
+      "score": 0.5614318,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.politico.eu/article/russia-president-vladimir-putin-donald-trump-joe-biden-elections-usa-2024-debate/",
+      "title": "Putin snored through Biden debate disaster, Kremlin says - Politico.eu",
+      "content": "Russia's leader affected disinterest in Trump vs. Biden, but his state media agents of chaos sprung into action.",
+      "score": 0.4851368,
+      "raw_content": null
+    }
+  ],
+  "response_time": 1.09,
+  "request_id": "f40d19df-fb65-4657-b6ce-5d99e78b59dc"
+}

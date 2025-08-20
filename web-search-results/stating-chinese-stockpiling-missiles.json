@@ -1,0 +1,45 @@
+{
+  "query": "stating chinese stockpiling missiles",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://thebulletin.org/premium/2025-03/chinese-nuclear-weapons-2025/",
+      "title": "Chinese nuclear weapons, 2025 - Bulletin of the Atomic Scientists",
+      "content": "In all, China's nuclear expansion is among the largest and most rapid modernization campaigns of the nine nuclear-armed states. We estimate that China has produced a stockpile of approximately 600 nuclear warheads for delivery by land-based ballistic missiles, sea-based ballistic missiles, and bombers (see Table 1).",
+      "score": 0.60077465,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.theguardian.com/world/2025/jun/17/china-nuclear-warheads-weapons-stockpile",
+      "title": "China stockpiling nuclear warheads at fastest rate globally, new ...",
+      "content": "New report estimates that China now has at least 600 nuclear warheads, with around 100 per year being added to the stockpile since 2023.",
+      "score": 0.4892356,
+      "raw_content": null
+    },
+    {
+      "url": "https://fas.org/publication/the-2024-dod-china-military-power-report/",
+      "title": "The 2024 DOD China Military Power Report",
+      "content": "The report confirms that those new silos are intended for DF-5 liquid-fuel missiles and appears to suggest that at least two brigades with the new silos are intended for the new multi-megaton DF-5C that it says China is now fielding. The report says that China continues to operate six Jin-class Type 094 SSBNs (nuclear powered ballistic missiles submarines) equipped with either the JL-2 or the 10,000-km range JL-3 SLBM (Sea-Launched Ballistic Missile). The DOD report says the six SSBNs \u201care conducting at sea deterrent patrols.\u201d In the U.S. Navy, that means the missiles are armed with nuclear warheads, but the DOD report does not explicitly say this is the case for China.",
+      "score": 0.4746074,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.newsweek.com/world-nuclear-forces-warhead-stockpiles-grow-china-2086460",
+      "title": "Map Shows World's Nuclear Stockpiles As China Warheads Increase",
+      "content": "According to the report, the Chinese military can deliver its nuclear warheads using 20 H-6N bomber aircraft, 72 ballistic missiles launched",
+      "score": 0.42190963,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.lowyinstitute.org/the-interpreter/numbers-china-s-nuclear-inventory-continues-grow",
+      "title": "By the numbers: China's nuclear inventory continues to grow",
+      "content": "The 2022 report estimated that the stockpile had surpassed 400 nuclear warheads. Second, in keeping with its modernisation objectives, China is",
+      "score": 0.39424816,
+      "raw_content": null
+    }
+  ],
+  "response_time": 0.69,
+  "request_id": "75d882f2-16d5-4784-bf80-2919e4304f73"
+}

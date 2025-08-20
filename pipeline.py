@@ -104,23 +104,23 @@ def create_outline(query: str, graph_summary: str) -> List[Dict[str, Any]]:
 
     filepath = get_filepath(query, "narration-outline")
     
-    # narration_outline = []
+    narration_outline = []
     
-    # if os.path.exists(filepath):
-    #     print("Outline already exists. Loading from file...")
-    #     with open(filepath, "r", encoding="utf-8") as f:
-    #             narration_outline = json.load(f)
-    #     return narration_outline
+    if os.path.exists(filepath):
+        print("Outline already exists. Loading from file...")
+        with open(filepath, "r", encoding="utf-8") as f:
+                narration_outline = json.load(f)
+        return narration_outline
 
-    sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline by eliminiating redundancies and unrelated content as well as restructuring the order of topics (atleast 3) and subtopics (atleast 3 for each topic) for such a video on detailed analysis using the following topics:"
+    sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline by eliminiating redundancies and unrelated content as well as restructuring the order of topics (2) and subtopics (2 for each topic) for such a video on detailed analysis using the following topics:"
     response = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), "Outline")
     
-    data = [item.dict() for item in response.parsed]
+    narration_outline = [item.dict() for item in response.parsed]
 
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(narration_outline, f, ensure_ascii=False, indent=2)
 
-    return data
+    return narration_outline
 
 # ............................................................................
 
@@ -399,7 +399,7 @@ def flatten_graph(node: Node, parent_summaries: list[str] = None) -> List[str]:
 docs = None
 doc_embeddings = None
 
-def retrieve(query: str, top_k: int = 3) -> List[str]:
+def retrieve(query: str, top_k: int = 1) -> List[str]:
     # Encode query
     query_embedding = embedding_model.encode([query], normalize_embeddings=True)[0]
 
@@ -447,6 +447,7 @@ def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
         json.dump(narration_script, f, ensure_ascii=False, indent=2)
     
     return narration_script
+
 # ............................................................................
 
 def config(query: str): 

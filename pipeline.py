@@ -16,6 +16,7 @@ from google import genai
 from pydantic import BaseModel
 from langchain.schema import Document
 import numpy as np
+from elevenlabs.client import ElevenLabs
 
 # ............................................................................
 
@@ -32,10 +33,6 @@ def get_filepath(query: str, results_dir: str) -> str:
     os.makedirs(results_dir, exist_ok=True)
     filename = f"{safe_filename(query)}.json"
     filepath = os.path.join(results_dir, filename)
-
-    if not os.path.exists(filepath):
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump({}, f)
     
     return filepath
 
@@ -75,30 +72,6 @@ def get_structured_response(sys_msg: str, query: str, format: str ,retry: int = 
 # ............................................................................
 
 # Function to create an outline for a video based on a query
-
-def _old_create_outline(query: str, graph_summary: str) -> List[Dict[str, Any]]:
-
-    filepath = get_filepath(query, "narration-outline")
-    
-    narration_outline = []
-    
-    if os.path.exists(filepath):
-        print("Outline already exists. Loading from file...")
-        with open(filepath, "r", encoding="utf-8") as f:
-                narration_outline = json.load(f)
-        return narration_outline
-
-    for item in graph_summary:
-
-        sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline by eliminiating redundancies and unrelated content as well as restructuring the order of subtopics (atelast 3 for each topic) for such a video on detailed analysis using the following topics:"
-        response = get_structured_response(sys_msg, graph_summary, "Outline")
-    
-    narration_outline.append({"topic": response.parsed.topic, "subtopics": response.parsed.subtopics})
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(narration_outline, f, ensure_ascii=False, indent=2)
-
-    return narration_outline
 
 def create_outline(query: str, graph_summary: str) -> List[Dict[str, Any]]:
 
@@ -414,6 +387,14 @@ def retrieve(query: str, top_k: int = 1) -> List[str]:
 
 def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
 
+    filepath = get_filepath(query, "narration-script")
+
+    if os.path.exists(filepath):
+        print("Script already exists. Loading from file...")
+        with open(filepath, "r", encoding="utf-8") as f:
+                narration_script = json.load(f)
+        return narration_script
+
     context = retrieve(query)
     sys_msg = f"Here is the context to answer the following query:\n{context}\nGenerate a narration script for the following topic enough for just one slide only (there are other topics as well, therefore just focus on this particular topic only):"
     
@@ -443,14 +424,62 @@ def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
 
         narration_script["subtopics"].append(narration_sub_script)
 
-    with open(get_filepath(query, "narration-script"), "w", encoding="utf-8") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         json.dump(narration_script, f, ensure_ascii=False, indent=2)
     
     return narration_script
 
 # ............................................................................
 
+# Audio generation pipeline
+
+elevenlabs = ElevenLabs(
+    api_key=os.getenv("ELEVENLABS_API_KEY")
+)
+
+def generate_audio(content: str):
+
+    response = elevenlabs.text_to_speech.convert_with_timestamps(
+        voice_id="6JsmTroalVewG1gA6Jmw",
+        text=content
+    )
+
+    return {
+        "audio_base_64": response.audio_base_64,
+        "alignment": response.alignment.model_dump(),
+        "normalized_alignment": response.normalized_alignment.model_dump(),
+    }
+
+def get_narration_audio(narration_script):
+
+    narration = narration_script
+        
+    filepath = get_filepath(narration["topic"], "narration-audio")
+
+    if os.path.exists(filepath):
+        print("Audio already exists. Loading from file...")
+        with open(filepath, "r", encoding="utf-8") as f:
+                narration = json.load(f)
+        return narration
+
+    narration["audio"] = generate_audio(narration["content"])
+
+    for subtopic in narration["subtopics"]:
+        subtopic["audio"] = generate_audio(subtopic["content"])
+
+        for sub_subtopic in subtopic["subtopics"]:
+            sub_subtopic["audio"] = generate_audio(sub_subtopic["content"])
+
+    else:
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(narration, f, ensure_ascii=False, indent=2)
+
+    return narration
+
+# ............................................................................
+
 def config(query: str): 
+
     global docs
     global embedding_model
     global doc_embeddings
@@ -465,7 +494,9 @@ def config(query: str):
 
     narration_script = get_narration_script(query, outline)
 
-    print(narration_script)
+    narration_audio = get_narration_audio(narration_script)
+
+    print(narration_audio)
 
 # ............................................................................
 

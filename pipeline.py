@@ -42,9 +42,9 @@ def safe_filename(query: str) -> str:
     # Replace non-alphanumeric characters with dashes
     return re.sub(r'[^a-zA-Z0-9]+', '-', query.lower()).strip('-')
 
-def get_filepath(query: str, results_dir: str) -> str:
+def get_filepath(query: str, results_dir: str, extension: str = "json") -> str:
     os.makedirs(results_dir, exist_ok=True)
-    filename = f"{safe_filename(query)}.json"
+    filename = f"{safe_filename(query)}.{extension}"
     filepath = os.path.join(results_dir, filename)
     
     return filepath
@@ -513,7 +513,7 @@ class NarrationScene(Scene):
 
     def play_slide(self, topic_dict):
 
-        filepath = get_filepath(topic_dict["topic"], "sounds", extention = "mp3")
+        filepath = get_filepath(topic_dict["topic"], "sounds", extension = "mp3")
 
         if not os.path.exists(filepath):
             save_audio(topic_dict["audio"]["audio_base_64"], filepath)

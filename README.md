@@ -66,7 +66,7 @@ git clone https://github.com/rachitbhandarii/klaro.git
 cd klaro
 ```
 
-1. Set up a Python virtual environment:
+2. Set up a Python virtual environment:
 
 ```bash
 python -m venv venv
@@ -74,19 +74,20 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate     # Windows
 ```
 
-1. Install dependencies:
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-1. Add environment variables in `.env`:
+4. Add environment variables in `.env`:
 
 ```
 GEMINI_API_KEY=<your_gemini_api_key>
 ELEVENLABS_API_KEY=<your_elevenlabs_api_key>
 TAVILY_API_KEY=<your_tavily_api_key>
 ```
+5. Install manim in your machine
 
 ---
 
@@ -98,13 +99,19 @@ TAVILY_API_KEY=<your_tavily_api_key>
 query = "Russia leaves Nuclear Arms Treaty with US"
 ```
 
-1. Run the main script:
+2. Run the main script:
 
 ```bash
 python pipeline.py
 ```
 
-1. Outputs are stored in `out/`:
+3. Run the manim command:
+
+```bash
+manim -pqh pipeline.py NarrationScene
+```
+
+4. Outputs are stored in `out/`:
 - Video: `out/videos/pipeline/sample_video.mp4`
 - Audio: `out/video/pipeline/sample_video.wav`
 - Knowledge Graph JSON: `knowledge-graph-dump/`

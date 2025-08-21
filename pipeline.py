@@ -17,6 +17,13 @@ from pydantic import BaseModel
 from langchain.schema import Document
 import numpy as np
 from elevenlabs.client import ElevenLabs
+import base64
+from pydub import AudioSegment
+from manim import *
+
+# ............................................................................
+
+query = "Russia leaves Nuclear Arms Treaty with US"
 
 # ............................................................................
 
@@ -24,6 +31,12 @@ from elevenlabs.client import ElevenLabs
 
 # Load environment variables
 load_dotenv()
+
+# Manim configuration (*can also be done using command line arguments)
+config.output_file = 'sample_video.mp4'
+config.media_dir = 'out'
+
+# Helper methods
 
 def safe_filename(query: str) -> str:
     # Replace non-alphanumeric characters with dashes
@@ -35,6 +48,13 @@ def get_filepath(query: str, results_dir: str) -> str:
     filepath = os.path.join(results_dir, filename)
     
     return filepath
+
+def save_audio(base64_str: str, filepath: str):
+    audio_bytes = base64.b64decode(base64_str)
+    with open(filepath, "wb") as f:
+        f.write(audio_bytes)
+    audio = AudioSegment.from_file(filepath, format="mp3")
+    return audio.duration_seconds
 
 # ............................................................................
 
@@ -175,7 +195,8 @@ headers = {
     )
 }
 
-# We can scrape the content of these URLs and extract the relevant information.
+# We can scrape the content of these URLs and extract the relevant information
+
 def extract_main_content(url: str, chunk_size: int = 800, overlap: int = 50) -> List[str]:
 
     try:
@@ -219,6 +240,7 @@ def extract_main_content(url: str, chunk_size: int = 800, overlap: int = 50) -> 
 # ............................................................................
 
 # Function to perform web search using Tavily API
+
 def web_search(query: str) -> List[str]:
     tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
     filepath = get_filepath(query, "web-search-results")
@@ -236,6 +258,8 @@ def web_search(query: str) -> List[str]:
     return urls
 
 # ............................................................................
+
+# Classes for building a Knowledge Graph against a query
 
 @dataclass
 class Node:
@@ -272,8 +296,6 @@ class Node:
             node.children.append(child_node)
         return node
     
-# ............................................................................
-
 class KnowledgeGraphBuilder:
     def __init__(self, query: str, maxLevel: int = 3):
         self.maxLevel = maxLevel
@@ -459,7 +481,7 @@ def get_narration_audio(narration_script):
     if os.path.exists(filepath):
         print("Audio already exists. Loading from file...")
         with open(filepath, "r", encoding="utf-8") as f:
-                narration = json.load(f)
+            narration = json.load(f)
         return narration
 
     narration["audio"] = generate_audio(narration["content"])
@@ -478,11 +500,88 @@ def get_narration_audio(narration_script):
 
 # ............................................................................
 
-def config(query: str): 
+# Manim class for Video Generation
+
+class NarrationScene(Scene):
+
+    def construct(self):
+
+        with open(get_filepath(query, "narration-audio"), "r", encoding="utf-8") as f:
+            narration_audio = json.load(f)
+        
+        self.play_slide(narration_audio)
+
+    def play_slide(self, topic_dict):
+
+        filepath = get_filepath(topic_dict["topic"], "sounds", extention = "mp3")
+
+        if not os.path.exists(filepath):
+            save_audio(topic_dict["audio"]["audio_base_64"], filepath)
+
+        normalized_alignment = topic_dict["audio"]["normalized_alignment"]
+        chars = normalized_alignment["characters"]
+        starts = normalized_alignment["character_start_times_seconds"]
+        ends = normalized_alignment["character_end_times_seconds"]
+         
+        # group into words
+        words, word_starts, word_ends = [], [], []
+        current_word, current_start = "", None
+
+        for c, s, e in zip(chars, starts, ends):
+            if c != " ":  # part of a word
+                if current_word == "":
+                    current_start = s
+                current_word += c
+                current_end = e
+            else:  # space -> close word
+                if current_word:
+                    words.append(current_word)
+                    word_starts.append(current_start)
+                    word_ends.append(current_end)
+                current_word, current_start = "", None
+
+        # Last word (if not ended with space)
+        if current_word:
+            words.append(current_word)
+            word_starts.append(current_start)
+            word_ends.append(current_end)
+
+        # Show topic
+        topic_text = Text(topic_dict["topic"], font_size=36).to_edge(UP)
+        self.add(topic_text)
+        self.play(Write(topic_text))
+        self.wait(0.5)
+
+        # Play sound
+        self.add_sound(filepath)
+
+        # Animate words
+        subtitle = Paragraph("", alignment="center", line_spacing=0.8, width=6).to_edge(DOWN)
+
+        self.add(subtitle)
+
+        current_text = ""
+        for w, s, e in zip(words, word_starts, word_ends):
+            current_text += " " + w
+            new_subtitle = Paragraph(current_text, alignment="center", line_spacing=0.8, width=6).to_edge(DOWN)
+            self.play(Transform(subtitle, new_subtitle), run_time=(e - s))
+
+        self.wait(1)
+
+        # Recursively handle subtopics
+        for subtopic in topic_dict["subtopics"]:
+            self.play(FadeOut(topic_text), FadeOut(subtitle))
+            self.clear()
+            self.play_slide(subtopic)
+
+# ............................................................................
+
+def main(): 
 
     global docs
     global embedding_model
     global doc_embeddings
+    global query
 
     knowledge_graph = get_knowledge_graph(query)
 
@@ -496,12 +595,9 @@ def config(query: str):
 
     narration_audio = get_narration_audio(narration_script)
 
-    print(narration_audio)
-
 # ............................................................................
 
 if __name__ == "__main__":
-    query = "Russia leaves Nuclear Arms Treaty with US"
-    config(query)
+    main()
 
 # ............................................................................

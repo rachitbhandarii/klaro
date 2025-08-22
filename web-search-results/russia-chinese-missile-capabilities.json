@@ -1,0 +1,45 @@
+{
+  "query": "russia chinese missile capabilities",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.newsweek.com/us-says-russia-helping-china-fill-nuclear-missile-silos-1933624",
+      "title": "Russia Is Helping China Fill Its Nuclear Missile Silos, US ...",
+      "content": "US defense officials say Russia is supplying China with reactor fuel as the East Asian power loads its silos with nuclear-capable intercontinental ballistic",
+      "score": 0.66777676,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.amacad.org/bulletin/spring-2024/understanding-chinese-and-russian-views-on-us-missile-defense",
+      "title": "Understanding Chinese and Russian Views on U.S. ...",
+      "content": "In April 2023, the Academy\u2019s project on Promoting Dialogue on Arms Control and Disarmament published Missile Defense and the Strategic Relationship among the United States, Russia, and China to address the growing tensions and worrisome trends for the security and stability of the global nuclear order.4 The publication features contributions from two experts: Tong Zhao, a senior fellow in the nuclear policy program at Carnegie Endowment for International Peace, and Dmitry Stefanovich, a research fellow at the Center for International Security at the Primakov National Research Institute of World Economy and International Relations. 12Dmitry Stefanovich, \u201cThe Indispensable Link: Strategic Defensive Capabilities as a Cornerstone of Arms Control and Arms Racing,\u201d in Tong Zhao and Dmitry Stefanovich, Missile Defense and the Strategic Relationship among the United States, Russia, and China (Cambridge, Mass.: American Academy of Arts and Sciences, 2023), 32.",
+      "score": 0.6485337,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.armscontrol.org/act/2025-06/news/china-russia-sharpen-golden-dome-missile-defense-critique",
+      "title": "China, Russia Sharpen 'Golden Dome' Missile Defense ...",
+      "content": "The new system \u201cwill be capable of intercepting missiles even if they are launched from other sides of the world and even if they are launched from space,\u201d",
+      "score": 0.6055431,
+      "raw_content": null
+    },
+    {
+      "url": "https://united24media.com/latest-news/china-revives-russias-hidden-container-missile-system-now-it-can-strike-without-warning-9055",
+      "title": "China Revives Russia's Hidden Container Missile System ...",
+      "content": "According to a study led by Professor Guo Yang of the PLA Rocket Force, the vehicles can maneuver at Mach 20 and may eventually be launched from",
+      "score": 0.58948064,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=QXvVs8RcbSg",
+      "title": "China, Russia, and Iran have hypersonic missiles. And that ...",
+      "content": "China and Russia and Iran have hypersonic missiles and lots of them and that's all that matters because these missiles cannot be intercepted.",
+      "score": 0.5565207,
+      "raw_content": null
+    }
+  ],
+  "response_time": 1.22,
+  "request_id": "383cf4ad-adfa-4ffa-a2b6-76f1de1a2728"
+}

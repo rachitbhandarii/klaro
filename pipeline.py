@@ -12,7 +12,7 @@ from transformers import pipeline
 import re
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from google import genai
+from litellm import completion
 from pydantic import BaseModel
 from langchain.schema import Document
 import numpy as np
@@ -42,9 +42,10 @@ def safe_filename(query: str) -> str:
     # Replace non-alphanumeric characters with dashes
     return re.sub(r'[^a-zA-Z0-9]+', '-', query.lower()).strip('-')
 
-def get_filepath(query: str, results_dir: str, extension: str = "json") -> str:
+def get_filepath(name: str, results_dir: str, extension: str = "json") -> str:
+    results_dir = os.path.join(query, results_dir)
     os.makedirs(results_dir, exist_ok=True)
-    filename = f"{safe_filename(query)}.{extension}"
+    filename = f"{safe_filename(name)}.{extension}"
     filepath = os.path.join(results_dir, filename)
     
     return filepath
@@ -64,30 +65,37 @@ class Outline(BaseModel):
     topic: str
     subtopics: list[str]
 
+class Outlines(BaseModel):
+    outline: list[Outline]
+
 class NarrationItem(BaseModel):
     content: str
 
+def get_structured_response(sys_msg: str, prompt: str, format: str ,retry: int = 1):
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-def get_structured_response(sys_msg: str, query: str, format: str ,retry: int = 1):
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-lite",
-        contents=f"{sys_msg}\n{query}",
-        config={
-            "response_mime_type": "application/json",
-            "response_schema": list[Outline] if format == "Outline" else NarrationItem
-        },
+    response = completion(
+        model="azure/gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": sys_msg},
+            {"role": "user", "content": prompt}
+        ],
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": format,
+                "schema": Outlines.model_json_schema() if format == "Outline" else NarrationItem.model_json_schema()
+            }
+        }
     )
 
-    if (response is None or not response.text):
+    if (response is None):
         if retry > 3:
-            raise Exception("Failed to generate outline after multiple retries")
+            raise Exception("Failed to generate output after multiple retries")
         else:
             print(f"Retrying outline generation... Attempt {retry + 1}")
-            return get_structured_response(sys_msg, query, format, retry + 1)
+            return get_structured_response(sys_msg, prompt, format, retry + 1)
     
-    return response
+    return json.loads(response.choices[0].message.content)[format.lower()]
 
 # ............................................................................
 
@@ -106,9 +114,7 @@ def create_outline(query: str, graph_summary: str) -> List[Dict[str, Any]]:
         return narration_outline
 
     sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline by eliminiating redundancies and unrelated content as well as restructuring the order of topics (2) and subtopics (2 for each topic) for such a video on detailed analysis using the following topics:"
-    response = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), "Outline")
-    
-    narration_outline = [item.dict() for item in response.parsed]
+    narration_outline = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), "Outline")
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(narration_outline, f, ensure_ascii=False, indent=2)
@@ -407,7 +413,7 @@ def retrieve(query: str, top_k: int = 1) -> List[str]:
     # Return top-k docs with scores
     return "\n".join([docs[i] for i in top_k_idx])
 
-def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
+def get_narration_script(query: str, outline) -> Dict[str, Any]:
 
     filepath = get_filepath(query, "narration-script")
 
@@ -422,7 +428,7 @@ def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
     
     response = get_structured_response(sys_msg, query, "NarrationItem")
 
-    narration_script = {"topic": query, "content": response.parsed.content, "subtopics": []}
+    narration_script = {"topic": query, "content": response["content"], "subtopics": []}
     for item in outline:
         
         sub_query = item["topic"]
@@ -432,7 +438,7 @@ def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
         
         sub_response = get_structured_response(sub_sys_msg, sub_query, "NarrationItem")
 
-        narration_sub_script = {"topic": sub_query, "content": sub_response.parsed.content, "subtopics": []}
+        narration_sub_script = {"topic": sub_query, "content": sub_response["content"], "subtopics": []}
 
         for subtopic in item["subtopics"]:
 
@@ -442,7 +448,7 @@ def get_narration_script(query: str, outline: List[Outline]) -> Dict[str, Any]:
             
             sub_sub_response = get_structured_response(sub_sub_sys_msg, sub_sub_topic_query, "NarrationItem")
             
-            narration_sub_script["subtopics"].append({"topic": sub_sub_topic_query, "content": sub_sub_response.parsed.content, "subtopics": []})
+            narration_sub_script["subtopics"].append({"topic": sub_sub_topic_query, "content": sub_sub_response["content"], "subtopics": []})
 
         narration_script["subtopics"].append(narration_sub_script)
 

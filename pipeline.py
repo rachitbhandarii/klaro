@@ -32,10 +32,6 @@ query = "Russia leaves Nuclear Arms Treaty with US"
 # Load environment variables
 load_dotenv()
 
-# Manim configuration (*can also be done using command line arguments)
-config.output_file = 'sample_video.mp4'
-config.media_dir = 'out'
-
 # Helper methods
 
 def safe_filename(query: str) -> str:
@@ -43,7 +39,7 @@ def safe_filename(query: str) -> str:
     return re.sub(r'[^a-zA-Z0-9]+', '-', query.lower()).strip('-')
 
 def get_filepath(name: str, results_dir: str, extension: str = "json") -> str:
-    results_dir = os.path.join(query, results_dir)
+    results_dir = os.path.join(safe_filename(query), results_dir)
     os.makedirs(results_dir, exist_ok=True)
     filename = f"{safe_filename(name)}.{extension}"
     filepath = os.path.join(results_dir, filename)
@@ -57,6 +53,10 @@ def save_audio(base64_str: str, filepath: str):
     audio = AudioSegment.from_file(filepath, format="mp3")
     return audio.duration_seconds
 
+# Manim configuration (*can also be done using command line arguments)
+config.output_file = f'{safe_filename(query)}.mp4'
+config.media_dir = os.path.join(safe_filename(query), 'out')
+
 # ............................................................................
 
 # AI generation methods and classes for structured response
@@ -69,9 +69,10 @@ class Outlines(BaseModel):
     outline: list[Outline]
 
 class NarrationItem(BaseModel):
+    questions: list[str]
     content: str
 
-def get_structured_response(sys_msg: str, prompt: str, format: str ,retry: int = 1):
+def get_structured_response(sys_msg: str, prompt: str, format: BaseModel ,retry: int = 1):
 
     response = completion(
         model="azure/gpt-4o-mini",
@@ -82,8 +83,8 @@ def get_structured_response(sys_msg: str, prompt: str, format: str ,retry: int =
         response_format={
             "type": "json_schema",
             "json_schema": {
-                "name": format,
-                "schema": Outlines.model_json_schema() if format == "Outline" else NarrationItem.model_json_schema()
+                "name": "content",
+                "schema": format.model_json_schema()
             }
         }
     )
@@ -95,7 +96,7 @@ def get_structured_response(sys_msg: str, prompt: str, format: str ,retry: int =
             print(f"Retrying outline generation... Attempt {retry + 1}")
             return get_structured_response(sys_msg, prompt, format, retry + 1)
     
-    return json.loads(response.choices[0].message.content)[format.lower()]
+    return json.loads(response.choices[0].message.content)["content"]
 
 # ............................................................................
 
@@ -113,8 +114,8 @@ def create_outline(query: str, graph_summary: str) -> List[Dict[str, Any]]:
                 narration_outline = json.load(f)
         return narration_outline
 
-    sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline by eliminiating redundancies and unrelated content as well as restructuring the order of topics (2) and subtopics (2 for each topic) for such a video on detailed analysis using the following topics:"
-    narration_outline = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), "Outline")
+    sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline for such a video by eliminiating redundancies and unrelated content as well as restructuring the order of topics and subtopics. The Topics and Subtopics should be linked and the subtopics should completely cover the topic. Create as extensive outline as you can (go into the depth)."
+    narration_outline = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), Outlines)
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(narration_outline, f, ensure_ascii=False, indent=2)
@@ -400,7 +401,7 @@ def flatten_graph(node: Node, parent_summaries: list[str] = None) -> List[str]:
 docs = None
 doc_embeddings = None
 
-def retrieve(query: str, top_k: int = 1) -> List[str]:
+def retrieve(query: str, top_k: int = 3) -> List[str]:
     # Encode query
     query_embedding = embedding_model.encode([query], normalize_embeddings=True)[0]
 
@@ -424,31 +425,31 @@ def get_narration_script(query: str, outline) -> Dict[str, Any]:
         return narration_script
 
     context = retrieve(query)
-    sys_msg = f"Here is the context to answer the following query:\n{context}\nGenerate a narration script for the following topic enough for just one slide only (there are other topics as well, therefore just focus on this particular topic only):"
+    sys_msg = f"Here is the context to answer the following query:\n{context}\nGenerate a narration script, giving an introduction to the video and briefly explaining the following news topic and also covering its affect on India if it is a global news:"
     
-    response = get_structured_response(sys_msg, query, "NarrationItem")
+    response = get_structured_response(sys_msg, query, NarrationItem)
 
-    narration_script = {"topic": query, "content": response["content"], "subtopics": []}
+    narration_script = {"topic": query, "content": response["content"], "questions": [], "subtopics": []}
     for item in outline:
         
         sub_query = item["topic"]
 
         sub_context = retrieve(sub_query)
-        sub_sys_msg = f"Here is the context to answer the following query:\n{sub_context}\nGenerate a narration script for the following topic enough for just one slide only (there are other topics as well, therefore just focus on this particular topic only):"
+        sub_sys_msg = f"Here is the context to answer the following query:\n{sub_context}\nGenerate a narration script giving an overview of the following news topic enough to cover one slide:"
         
-        sub_response = get_structured_response(sub_sys_msg, sub_query, "NarrationItem")
+        sub_response = get_structured_response(sub_sys_msg, sub_query, NarrationItem)
 
-        narration_sub_script = {"topic": sub_query, "content": sub_response["content"], "subtopics": []}
+        narration_sub_script = {"topic": sub_query, "content": sub_response["content"], "questions": [], "subtopics": []}
 
         for subtopic in item["subtopics"]:
 
-            sub_sub_topic_query = subtopic
-            sub_sub_topic_context = retrieve(sub_sub_topic_query)
-            sub_sub_sys_msg = f"Here is the context to answer the following query:\n{sub_sub_topic_context}\nGenerate a narration script for the following subtopic enough for just one slide only (there are other subtopics as well, therefore just focus on this particular subtopic only):"
+            sub_sub_query = subtopic
+            sub_sub_context = retrieve(sub_sub_query)
+            sub_sub_sys_msg = f"Here is the context to answer the following query:\n{sub_sub_context}\nGenerate some questions that could be asked in UPSC related to the following topic to the viewers. Generate a narration script that explains the following subtopic in depth, covering every angle of it and also talking about its affect on India if it is a global issue, while also integrating the generated questions indirectly (such a question might appear in the UPSC exam) in the script, whenever you discuss a point which is related to that question :"
             
-            sub_sub_response = get_structured_response(sub_sub_sys_msg, sub_sub_topic_query, "NarrationItem")
+            sub_sub_response = get_structured_response(sub_sub_sys_msg, sub_sub_query, NarrationItem)
             
-            narration_sub_script["subtopics"].append({"topic": sub_sub_topic_query, "content": sub_sub_response["content"], "subtopics": []})
+            narration_sub_script["subtopics"].append({"topic": sub_sub_query, "content": sub_sub_response["content"], "questions": sub_sub_response["questions"], "subtopics": []})
 
         narration_script["subtopics"].append(narration_sub_script)
 
@@ -468,7 +469,7 @@ elevenlabs = ElevenLabs(
 def generate_audio(content: str):
 
     response = elevenlabs.text_to_speech.convert_with_timestamps(
-        voice_id="6JsmTroalVewG1gA6Jmw",
+        voice_id="2zRM7PkgwBPiau2jvVXc",
         text=content
     )
 
@@ -490,13 +491,13 @@ def get_narration_audio(narration_script):
             narration = json.load(f)
         return narration
 
-    narration["audio"] = generate_audio(narration["content"])
-
+    narration["audio"] = generate_audio(narration["topic"] + narration["content"])
+    
     for subtopic in narration["subtopics"]:
-        subtopic["audio"] = generate_audio(subtopic["content"])
+        subtopic["audio"] = generate_audio(subtopic["topic"] + subtopic["content"])
 
         for sub_subtopic in subtopic["subtopics"]:
-            sub_subtopic["audio"] = generate_audio(sub_subtopic["content"])
+            sub_subtopic["audio"] = generate_audio(sub_subtopic["topic"] + sub_subtopic["content"])
 
     else:
         with open(filepath, "w", encoding="utf-8") as f:
@@ -562,21 +563,22 @@ class NarrationScene(Scene):
         self.add_sound(filepath)
 
         # Animate words
-        subtitle = Paragraph("", alignment="center", line_spacing=0.8, width=6).to_edge(DOWN)
+        subtitle = Paragraph("", alignment="center", line_spacing=0.8, width=6, font_size=24).next_to(topic_text, DOWN, buff=0.5)
+
 
         self.add(subtitle)
 
         current_text = ""
         for w, s, e in zip(words, word_starts, word_ends):
             current_text += " " + w
-            new_subtitle = Paragraph(current_text, alignment="center", line_spacing=0.8, width=6).to_edge(DOWN)
+            new_subtitle = Paragraph(current_text, alignment="center", line_spacing=0.8, width=6, font_size=24).next_to(topic_text, DOWN, buff=0.5)
             self.play(Transform(subtitle, new_subtitle), run_time=(e - s))
 
-        self.wait(1)
+        self.wait(3)
+        self.play(FadeOut(topic_text), FadeOut(subtitle))
 
         # Recursively handle subtopics
         for subtopic in topic_dict["subtopics"]:
-            self.play(FadeOut(topic_text), FadeOut(subtitle))
             self.clear()
             self.play_slide(subtopic)
 

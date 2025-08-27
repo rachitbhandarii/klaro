@@ -2,18 +2,15 @@
 
 # **An E2E pipeline for generating educational videos using AI and automation**
 
-This project generates educational videos from web sources using a **knowledge graph + RAG pipeline** with narration and subtitles. Videos are rendered using **Manim** with word-level animations synced to AI-generated speech.
+This project generates educational videos from web sources using a **knowledge graph + RAG pipeline** with narration and subtitles.
 
 ---
 
 ## Project Structure
 
 ```
-├── main.py                     # Main pipeline
-├── knowledge-graph-dump/       # Cached knowledge graphs
-├── narration-audio/            # Generated audio files
-├── narration-script/           # Structured narration scripts
-├── out/                        # Generated video and media
+├── pipeline.py                 # Main pipeline
+├── {query}/                    # Cached json files
 ├── requirements.txt            # Python dependencies
 ├── .env                        # API keys
 
@@ -25,9 +22,8 @@ This project generates educational videos from web sources using a **knowledge g
 
 - **Knowledge Graph Construction:** Builds hierarchical nodes from web sources based on a query.
 - **RAG Retrieval:** Retrieves relevant content using embeddings from `SentenceTransformer`.
-- **Narration Script Generation:** Uses Gemini API to produce structured slide content.
+- **Narration Script Generation:** Uses OpenAI API to produce structured slide content.
 - **Audio Generation:** Converts narration to speech with **ElevenLabs** with word-level timestamps.
-- **Video Generation:** Animates slides using **Manim**, displaying text word-by-word in sync with narration.
 - **Caching:** Stores knowledge graphs, scripts, and audio locally to reduce redundant API calls.
 
 ---
@@ -43,16 +39,14 @@ flowchart TD
     E --> F[Build Knowledge Graph Node hierarchy]
     F --> G[Flatten Graph & Generate Embeddings]
     G --> H[Retrieve Context via RAG]
-    H --> I[Generate Narration Script using Gemini API]
+    H --> I[Generate Question Set and Narration Script using OpenAI API]
     I --> J[Text-to-Speech via ElevenLabs]
     J --> K[Save Audio Locally]
-    K --> L[Generate Video Slides using Manim]
-    L --> M[Animate Words with Audio Sync]
-    M --> N[Output Video: sample_video.mp4]
+    K --> L[Generate Timestamped Slide Content using Normalized Alignment from the Audio]
 
 ```
 
-> The diagram above shows the end-to-end pipeline from a query to the final video output.
+> The diagram above shows the end-to-end pipeline from a query to the final output.
 > 
 
 ---
@@ -83,12 +77,9 @@ pip install -r requirements.txt
 4. Add environment variables in `.env`:
 
 ```
-GEMINI_API_KEY=<your_gemini_api_key>
+OPENAI_API_KEY=<your_openai_api_key>
 ELEVENLABS_API_KEY=<your_elevenlabs_api_key>
 TAVILY_API_KEY=<your_tavily_api_key>
-```
-5. Install manim in your machine
-
 ---
 
 ## Usage
@@ -104,17 +95,5 @@ query = "Russia leaves Nuclear Arms Treaty with US"
 ```bash
 python pipeline.py
 ```
-
-3. Run the manim command:
-
-```bash
-manim -pqh pipeline.py NarrationScene
-```
-
-4. Outputs are stored in `out/`:
-- Video: `out/videos/pipeline/sample_video.mp4`
-- Audio: `out/video/pipeline/sample_video.wav`
-- Knowledge Graph JSON: `knowledge-graph-dump/`
-- Narration Scripts: `narration-script/`
 
 ---

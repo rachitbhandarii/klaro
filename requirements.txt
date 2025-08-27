@@ -1,23 +1,15 @@
-# Core AI libraries
-genai>=0.1.5
-elevenlabs>=0.4.0
-langchain>=0.1.0
-sentence-transformers>=2.2.2
-keybert>=0.9.0
-transformers>=4.41.0
-torch>=2.1.0
-numpy>=1.25.0
-
-# Video & Audio
-manim>=0.17.2
-pydub>=0.25.1
-
-# Web scraping & requests
-beautifulsoup4>=4.12.2
-requests>=2.31.0
-urllib3>=2.0.4
-
-# Utilities
-python-dotenv>=1.0.1
-pydantic>=2.5.1
-dataclasses>=0.6
+tavily-python
+beautifulsoup4
+requests
+python-dotenv
+dataclasses  # (built-in for Python 3.7+, can omit if using 3.7+)
+keybert
+sentence-transformers
+transformers
+urllib3
+litellm
+pydantic
+langchain
+numpy
+elevenlabs
+pydub

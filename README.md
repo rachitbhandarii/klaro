@@ -80,6 +80,7 @@ pip install -r requirements.txt
 OPENAI_API_KEY=<your_openai_api_key>
 ELEVENLABS_API_KEY=<your_elevenlabs_api_key>
 TAVILY_API_KEY=<your_tavily_api_key>
+```
 ---
 
 ## Usage

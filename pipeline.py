@@ -19,7 +19,6 @@ import numpy as np
 from elevenlabs.client import ElevenLabs
 import base64
 from pydub import AudioSegment
-from manim import *
 
 # ............................................................................
 
@@ -53,10 +52,6 @@ def save_audio(base64_str: str, filepath: str):
     audio = AudioSegment.from_file(filepath, format="mp3")
     return audio.duration_seconds
 
-# Manim configuration (*can also be done using command line arguments)
-config.output_file = f'{safe_filename(query)}.mp4'
-config.media_dir = os.path.join(safe_filename(query), 'out')
-
 # ............................................................................
 
 # AI generation methods and classes for structured response
@@ -72,6 +67,14 @@ class NarrationItem(BaseModel):
     questions: list[str]
     content: str
 
+class Content(BaseModel):
+    point: str
+    start_time: float
+    end_time: float
+
+class SlideContent(BaseModel):
+    slide: list[Content]
+
 def get_structured_response(sys_msg: str, prompt: str, format: BaseModel ,retry: int = 1):
 
     response = completion(
@@ -83,7 +86,7 @@ def get_structured_response(sys_msg: str, prompt: str, format: BaseModel ,retry:
         response_format={
             "type": "json_schema",
             "json_schema": {
-                "name": "content",
+                "name": format.__name__.lower(),
                 "schema": format.model_json_schema()
             }
         }
@@ -95,8 +98,8 @@ def get_structured_response(sys_msg: str, prompt: str, format: BaseModel ,retry:
         else:
             print(f"Retrying outline generation... Attempt {retry + 1}")
             return get_structured_response(sys_msg, prompt, format, retry + 1)
-    
-    return json.loads(response.choices[0].message.content)["content"]
+        
+    return json.loads(response.choices[0].message.content)
 
 # ............................................................................
 
@@ -114,8 +117,8 @@ def create_outline(query: str, graph_summary: str) -> List[Dict[str, Any]]:
                 narration_outline = json.load(f)
         return narration_outline
 
-    sys_msg = "You are a pedagogy specialist. We want to create an informative video for UPSC aspirants. Create a structured outline for such a video by eliminiating redundancies and unrelated content as well as restructuring the order of topics and subtopics. The Topics and Subtopics should be linked and the subtopics should completely cover the topic. Create as extensive outline as you can (go into the depth)."
-    narration_outline = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), Outlines)
+    sys_msg = "You are a pedagogy specialist. We want to create an informative video on current affairs for UPSC aspirants. Create a structured outline for such a video by eliminiating redundancies (a single subtopic for a single keyword) and unrelated content (not related to current affairs and UPSC preparation) as well as restructuring the order of topics and subtopics (no topic/subtopic should be repeated or related to another topic/subtopic). Each Topic's Subtopics should be linked to the topic. Create an extensive outline (go into the depth)."
+    narration_outline = get_structured_response(sys_msg, "\n".join(graph for graph in graph_summary), Outlines)["outline"]
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(narration_outline, f, ensure_ascii=False, indent=2)
@@ -425,17 +428,18 @@ def get_narration_script(query: str, outline) -> Dict[str, Any]:
         return narration_script
 
     context = retrieve(query)
-    sys_msg = f"Here is the context to answer the following query:\n{context}\nGenerate a narration script, giving an introduction to the video and briefly explaining the following news topic and also covering its affect on India if it is a global news:"
+    sys_msg = f"Don't specify the title of the slide. Here is the context to answer the following query:\n{context}\nGenerate a narration script, giving an introduction to the video (without any concluding remarks) and briefly explaining the following news topic and also covering its affect on India if it is a global news, in no more than 300 characters:"
     
     response = get_structured_response(sys_msg, query, NarrationItem)
 
     narration_script = {"topic": query, "content": response["content"], "questions": [], "subtopics": []}
+
     for item in outline:
         
         sub_query = item["topic"]
 
         sub_context = retrieve(sub_query)
-        sub_sys_msg = f"Here is the context to answer the following query:\n{sub_context}\nGenerate a narration script giving an overview of the following news topic enough to cover one slide:"
+        sub_sys_msg = f"Don't specify the title of the slide. Here is the context to answer the following query:\n{sub_context}\nGenerate a narration script giving an overview of the following news topic enough to cover one slide, in no more than 400 characters:"
         
         sub_response = get_structured_response(sub_sys_msg, sub_query, NarrationItem)
 
@@ -445,7 +449,7 @@ def get_narration_script(query: str, outline) -> Dict[str, Any]:
 
             sub_sub_query = subtopic
             sub_sub_context = retrieve(sub_sub_query)
-            sub_sub_sys_msg = f"Here is the context to answer the following query:\n{sub_sub_context}\nGenerate some questions that could be asked in UPSC related to the following topic to the viewers. Generate a narration script that explains the following subtopic in depth, covering every angle of it and also talking about its affect on India if it is a global issue, while also integrating the generated questions indirectly (such a question might appear in the UPSC exam) in the script, whenever you discuss a point which is related to that question :"
+            sub_sub_sys_msg = f"Don't specify the title of the slide. Here is the context to answer the following query:\n{sub_sub_context}\nGenerate some questions that could be asked in UPSC related to the following topic to the viewers. Generate a narration script that explains the following subtopic in depth, covering every angle of it and also talking about its affect on India if it is a global issue, while also integrating the generated questions indirectly (such a question might appear in the UPSC exam) in the script, whenever you discuss a point which is related to that question, in no more than 600 characters :"
             
             sub_sub_response = get_structured_response(sub_sub_sys_msg, sub_sub_query, NarrationItem)
             
@@ -466,22 +470,36 @@ elevenlabs = ElevenLabs(
     api_key=os.getenv("ELEVENLABS_API_KEY")
 )
 
-def generate_audio(content: str):
+def generate_audio(i: int, content: str):
+
+    filepath = get_filepath(i.__str__(), "audio-json-dump")
+
+    if os.path.exists(filepath):
+        print("Specific audio already exists. Loading from file...")
+        with open(filepath, "r", encoding="utf-8") as f:
+            audio = json.load(f)
+        return audio
 
     response = elevenlabs.text_to_speech.convert_with_timestamps(
         voice_id="2zRM7PkgwBPiau2jvVXc",
-        text=content
+        text=content,
+        model_id="eleven_turbo_v2"
     )
 
-    return {
+    output = {
         "audio_base_64": response.audio_base_64,
         "alignment": response.alignment.model_dump(),
         "normalized_alignment": response.normalized_alignment.model_dump(),
     }
 
-def get_narration_audio(narration_script):
+    with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+    
+    save_audio(response.audio_base_64, get_filepath(i.__str__(), "audio", extension="mp3"))
 
-    narration = narration_script
+    return output
+
+def get_narration_audio(narration):
         
     filepath = get_filepath(narration["topic"], "narration-audio")
 
@@ -490,15 +508,15 @@ def get_narration_audio(narration_script):
         with open(filepath, "r", encoding="utf-8") as f:
             narration = json.load(f)
         return narration
-
-    narration["audio"] = generate_audio(narration["topic"] + narration["content"])
-    
+    i = 1
+    narration["audio"] = generate_audio(i, f'{narration["topic"]}. {narration["content"]}')
+    i += 1
     for subtopic in narration["subtopics"]:
-        subtopic["audio"] = generate_audio(subtopic["topic"] + subtopic["content"])
-
+        subtopic["audio"] = generate_audio(i, f'{subtopic["topic"]}. {subtopic["content"]}')
+        i += 1
         for sub_subtopic in subtopic["subtopics"]:
-            sub_subtopic["audio"] = generate_audio(sub_subtopic["topic"] + sub_subtopic["content"])
-
+            sub_subtopic["audio"] = generate_audio(i, f'{sub_subtopic["topic"]}. {sub_subtopic["content"]}')
+            i += 1
     else:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(narration, f, ensure_ascii=False, indent=2)
@@ -507,80 +525,36 @@ def get_narration_audio(narration_script):
 
 # ............................................................................
 
-# Manim class for Video Generation
+# Generate Slide content
 
-class NarrationScene(Scene):
+def get_slide_content(narration): # give the json with audio as param
 
-    def construct(self):
+    filepath = get_filepath(narration["topic"], "final-content")
 
-        with open(get_filepath(query, "narration-audio"), "r", encoding="utf-8") as f:
-            narration_audio = json.load(f)
-        
-        self.play_slide(narration_audio)
+    if os.path.exists(filepath):
+        print("Audio already exists. Loading from file...")
+        with open(filepath, "r", encoding="utf-8") as f:
+            narration = json.load(f)
+        return narration
+    
+    sys_msg = "You are a timestamping and summarization expert. You are provided with a mapping of narration to its timestamp in seconds for the slide and a list of questions. Generate me a list of points that I can display on the slide along with their start_time and end_time according to the timestamps I have provided. Do not include the topic of the content in the points. Do not include any text which is present in both narration and questions and don't include any questions."
+    
+    prompt = f'Questions: {narration["questions"]}\nNarration with timestamps: {narration["audio"]["normalized_alignment"]}'
+    narration["slide"] = get_structured_response(sys_msg, prompt, SlideContent)["slide"]
 
-    def play_slide(self, topic_dict):
+    for subtopic in narration["subtopics"]:
+        sub_prompt = f'Questions: {subtopic["questions"]}\nNarration with timestamps: {subtopic["audio"]["normalized_alignment"]}'
+        subtopic["slide"] = get_structured_response(sys_msg, sub_prompt, SlideContent)["slide"]
 
-        filepath = get_filepath(topic_dict["topic"], "sounds", extension = "mp3")
+        for sub_subtopic in subtopic["subtopics"]:
+            sub_sub_prompt = f'Questions: {sub_subtopic["questions"]}\nNarration with timestamps: {sub_subtopic["audio"]["normalized_alignment"]}'
+            sub_subtopic["slide"] = get_structured_response(sys_msg, sub_sub_prompt, SlideContent)["slide"]
 
-        if not os.path.exists(filepath):
-            save_audio(topic_dict["audio"]["audio_base_64"], filepath)
+    else:
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(narration, f, ensure_ascii=False, indent=2)
 
-        normalized_alignment = topic_dict["audio"]["normalized_alignment"]
-        chars = normalized_alignment["characters"]
-        starts = normalized_alignment["character_start_times_seconds"]
-        ends = normalized_alignment["character_end_times_seconds"]
-         
-        # group into words
-        words, word_starts, word_ends = [], [], []
-        current_word, current_start = "", None
-
-        for c, s, e in zip(chars, starts, ends):
-            if c != " ":  # part of a word
-                if current_word == "":
-                    current_start = s
-                current_word += c
-                current_end = e
-            else:  # space -> close word
-                if current_word:
-                    words.append(current_word)
-                    word_starts.append(current_start)
-                    word_ends.append(current_end)
-                current_word, current_start = "", None
-
-        # Last word (if not ended with space)
-        if current_word:
-            words.append(current_word)
-            word_starts.append(current_start)
-            word_ends.append(current_end)
-
-        # Show topic
-        topic_text = Text(topic_dict["topic"], font_size=36).to_edge(UP)
-        self.add(topic_text)
-        self.play(Write(topic_text))
-        self.wait(0.5)
-
-        # Play sound
-        self.add_sound(filepath)
-
-        # Animate words
-        subtitle = Paragraph("", alignment="center", line_spacing=0.8, width=6, font_size=24).next_to(topic_text, DOWN, buff=0.5)
-
-
-        self.add(subtitle)
-
-        current_text = ""
-        for w, s, e in zip(words, word_starts, word_ends):
-            current_text += " " + w
-            new_subtitle = Paragraph(current_text, alignment="center", line_spacing=0.8, width=6, font_size=24).next_to(topic_text, DOWN, buff=0.5)
-            self.play(Transform(subtitle, new_subtitle), run_time=(e - s))
-
-        self.wait(3)
-        self.play(FadeOut(topic_text), FadeOut(subtitle))
-
-        # Recursively handle subtopics
-        for subtopic in topic_dict["subtopics"]:
-            self.clear()
-            self.play_slide(subtopic)
+    return narration
 
 # ............................................................................
 
@@ -602,6 +576,8 @@ def main():
     narration_script = get_narration_script(query, outline)
 
     narration_audio = get_narration_audio(narration_script)
+
+    final_content = get_slide_content(narration_audio)
 
 # ............................................................................
 

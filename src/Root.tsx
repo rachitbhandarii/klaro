@@ -1,28 +1,15 @@
-import { Composition } from "remotion";
+import { Composition, staticFile, delayRender, continueRender } from "remotion";
 import { SlidesRenderer } from "./SlidesRenderer";
+import { TopicDict, topic } from "./types";
+import React, { useEffect, useState } from "react";
+import { BlankComponent } from "./BlankComponent";
 
-const videoTopic = process.env.VIDEO_TOPIC;
-if (!videoTopic) {
-  throw new Error("VIDEO_TOPIC is not set in .env!");
-}
-export const topic = videoTopic
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-+|-+$/g, "");
-
-console.log("Video topic is:", topic);
-
-const jsonPath: string = `../public/${topic}/final-content/${topic}.json`
-
-const treeDataJson = require(jsonPath);
-import { TopicDict } from "./types";
-
-const treeData: TopicDict = treeDataJson as TopicDict;
-
-
-// Helper: get total duration from audio lengths recursively
 const getTotalDurationInFrames = (node: TopicDict, fps: number): number => {
-  let totalSeconds = node.audio?.length || 5;
+  let totalSeconds = node.audio?.length + 2 || 5;
+
+  if (!node) {
+    return 0;
+  }
 
   if (node.subtopics) {
     totalSeconds += node.subtopics.reduce(
@@ -35,12 +22,56 @@ const getTotalDurationInFrames = (node: TopicDict, fps: number): number => {
 };
 
 export const RemotionRoot: React.FC = () => {
-  const fps = 60; // match your project FPS
+  const fps = 60;
+  const [treeData, setTreeData] = useState<TopicDict | null>(null);
+
+  // This handle prevents rendering until data is fetched
+  const [handle] = useState(() => delayRender());
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (typeof window === "undefined") {
+          // Node.js render mode
+          const data = require(`../public/${topic}/final-content/${topic}.json`) as TopicDict;
+          setTreeData(data);
+          continueRender(handle);
+        } else {
+          // Dev (browser)
+          const jsonUrl = staticFile(`/${topic}/final-content/${topic}.json`);
+          const response = await fetch(jsonUrl);
+          const data = (await response.json()) as TopicDict;
+          setTreeData(data);
+          continueRender(handle);
+        }
+      } catch (err) {
+        console.error("Failed to load JSON:", err);
+        continueRender(handle);
+      }
+    };
+
+    fetchData();
+  }, [handle]);
+
+  if (!treeData) {
+    return (
+      <Composition
+        id="empty"
+        component={BlankComponent}
+        durationInFrames={1}
+        fps={fps}
+        width={1920}
+        height={1080}
+        defaultProps={{}}
+      />
+    );
+  }
+
   const durationInFrames = Math.ceil(getTotalDurationInFrames(treeData, fps));
 
   return (
     <Composition
-      id="Slides"
+      id={topic}
       component={SlidesRenderer}
       durationInFrames={durationInFrames}
       fps={fps}

@@ -8,8 +8,7 @@ import {
   AbsoluteFill,
   staticFile
 } from "remotion";
-import { TopicDict } from "./types";
-import { topic } from "./Root";
+import { TopicDict, topic } from "./types";
 
 type SlideProps = {
   handle: TopicDict;

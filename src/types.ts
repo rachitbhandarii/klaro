@@ -23,5 +23,16 @@ export type TopicDict = {
       character_end_times_seconds: number[];
     };
   };
-  subtopics: TopicDict[];
+  subtopics?: TopicDict[];
 };
+
+const videoTopic = process.env.VIDEO_TOPIC;
+if (!videoTopic) {
+  throw new Error("VIDEO_TOPIC is not set in .env!");
+}
+export const topic = videoTopic
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "");
+
+console.log("Video topic is:", topic);

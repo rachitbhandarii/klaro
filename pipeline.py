@@ -19,6 +19,7 @@ import numpy as np
 from elevenlabs.client import ElevenLabs
 import base64
 from pydub import AudioSegment
+import io
 
 # Util methods
 
@@ -48,12 +49,13 @@ def get_filepath(name: str, results_dir: str, extension: str = "json") -> str:
     
     return filepath
 
-def save_audio(base64_str: str, filepath: str):
+def save_audio(base64_str: str, filepath: str, silence_duration: int = 1000):
     audio_bytes = base64.b64decode(base64_str)
-    with open(filepath, "wb") as f:
-        f.write(audio_bytes)
-    audio = AudioSegment.from_file(filepath, format="mp3")
-    return audio.duration_seconds
+    sound = AudioSegment.from_file(io.BytesIO(audio_bytes), format="mp3")
+    silence = AudioSegment.silent(duration=silence_duration)
+    modified = silence + sound
+    modified.export(filepath, format="mp3")
+    return modified.duration_seconds
 
 # ............................................................................
 

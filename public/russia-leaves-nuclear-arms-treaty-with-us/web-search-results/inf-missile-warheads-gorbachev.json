@@ -1,0 +1,45 @@
+{
+  "query": "inf missile warheads gorbachev",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://nsarchive.gwu.edu/briefing-book/russia-programs/2019-08-02/inf-treaty-1987-2019",
+      "title": "The INF Treaty, 1987-2019 | National Security Archive",
+      "content": "**Washington D.C., August 2, 2019**\u2013 The Intermediate-range Nuclear Forces Treaty negotiated by U.S. President Ronald Reagan and Soviet leader Mikhail Gorbachev in 1987 not only eliminated an entire class of nuclear weapons but also broke new ground in arms control verification, according to declassified documents on INF negotiations published today by the National Security Archive. On the Friday before the Washington summit, President Reagan signs this directive setting out what journalist Don Oberdorfer later described as \u201cseemingly impossible\u201d negotiating goals on SDI with Gorbachev, including explicit Soviet approval of tests in space, and Soviet approval of US deployment of strategic defenses after the end of an agreed period of non-withdrawal from ABM Treaty.",
+      "score": 0.586926,
+      "raw_content": null
+    },
+    {
+      "url": "https://thebulletin.org/virtual-tour/president-ronald-reagan-the-ussrs-mikhail-gorbachev-and-the-inf-treaty/",
+      "title": "President Ronald Reagan, the USSR's Mikhail Gorbachev and the ...",
+      "content": "Under the INF Treaty, the Soviet Union destroyed 889 of its intermediate-range missiles and 957 shorter-range missiles, and the U.S. destroyed 677 and 169",
+      "score": 0.5637388,
+      "raw_content": null
+    },
+    {
+      "url": "https://nuke.fas.org/control/inf/inf-chron.htm",
+      "title": "Intermediate-Range Nuclear Forces [INF] Chronology - Nuke",
+      "content": "1987 -- February 28 SOVIET UNION DE-LINKS INF General Secretary Gorbachev de-links INF negotiations from resolution of SDI and ABM issues, thereby clearing the",
+      "score": 0.45769477,
+      "raw_content": null
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Intermediate-Range_Nuclear_Forces_Treaty",
+      "title": "Intermediate-Range Nuclear Forces Treaty - Wikipedia",
+      "content": "The Intermediate-Range Nuclear Forces Treaty (INF Treaty) was an arms control treaty between the United States and the Soviet Union (and its successor state, the Russian Federation). On 8 March 2019, the Foreign Ministry of Ukraine \"Ministry of Foreign Affairs (Ukraine)\") announced that since the United States and Russia had both pulled out of the treaty, it now had the right to develop intermediate-range missiles, citing Russian aggression against Ukraine as a serious threat to the European continent, and the presence of Russian Iskander-M nuclear-capable missile systems in Russian-annexed Crimea.",
+      "score": 0.34733838,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.armscontrol.org/factsheets/intermediate-range-nuclear-forces-inf-treaty-glance",
+      "title": "The Intermediate-Range Nuclear Forces (INF) Treaty at a Glance",
+      "content": "The 1987 Intermediate-Range Nuclear Forces (INF) Treaty required the United States and the Soviet Union to eliminate and permanently forswear all of their nuclear and conventional ground-launched ballistic and cruise missiles with ranges of 500 to 5,500 kilometers. The United States first alleged in its July 2014 Compliance Report that Russia was in violation of its INF Treaty obligations \u201cnot to possess, produce, or flight-test\u201d a ground-launched cruise missile having a range of 500 to 5,500 kilometers or \u201cto possess or produce launchers of such missiles.\u201d Subsequent State Department assessments in 2015, 2016, 2017, and 2018 repeated these allegations.",
+      "score": 0.26931968,
+      "raw_content": null
+    }
+  ],
+  "response_time": 1.31,
+  "request_id": "d4b188c6-c5fa-4f2b-82d1-b481b0ba9540"
+}

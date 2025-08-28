@@ -20,16 +20,18 @@ from elevenlabs.client import ElevenLabs
 import base64
 from pydub import AudioSegment
 
-# ............................................................................
-
-query = "Russia leaves Nuclear Arms Treaty with US"
-
-# ............................................................................
-
 # Util methods
 
 # Load environment variables
 load_dotenv()
+
+# ............................................................................
+
+query = os.getenv("VIDEO_TOPIC").__str__()
+if not query:
+    raise ValueError("VIDEO_TOPIC environment variable not set!")
+
+# ............................................................................
 
 # Helper methods
 
@@ -38,7 +40,8 @@ def safe_filename(query: str) -> str:
     return re.sub(r'[^a-zA-Z0-9]+', '-', query.lower()).strip('-')
 
 def get_filepath(name: str, results_dir: str, extension: str = "json") -> str:
-    results_dir = os.path.join(safe_filename(query), results_dir)
+    path_to_default_dir = os.path.join("public", safe_filename(query))
+    results_dir = os.path.join(path_to_default_dir, results_dir)
     os.makedirs(results_dir, exist_ok=True)
     filename = f"{safe_filename(name)}.{extension}"
     filepath = os.path.join(results_dir, filename)
@@ -70,7 +73,6 @@ class NarrationItem(BaseModel):
 class Content(BaseModel):
     point: str
     start_time: float
-    end_time: float
 
 class SlideContent(BaseModel):
     slide: list[Content]
@@ -492,10 +494,16 @@ def generate_audio(i: int, content: str):
         "normalized_alignment": response.normalized_alignment.model_dump(),
     }
 
+    save_audio(response.audio_base_64, get_filepath(i.__str__(), "audio", extension="mp3"))
+
+    audio_filepath = get_filepath(i.__str__(), "audio", extension="mp3")
+    audio = AudioSegment.from_mp3(audio_filepath)
+    duration_seconds = len(audio) / 1000.0
+
+    output["length"] = duration_seconds
+
     with open(filepath, "w", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
-    
-    save_audio(response.audio_base_64, get_filepath(i.__str__(), "audio", extension="mp3"))
 
     return output
 
@@ -532,12 +540,12 @@ def get_slide_content(narration): # give the json with audio as param
     filepath = get_filepath(narration["topic"], "final-content")
 
     if os.path.exists(filepath):
-        print("Audio already exists. Loading from file...")
+        print("Final content already exists. Loading from file...")
         with open(filepath, "r", encoding="utf-8") as f:
             narration = json.load(f)
         return narration
     
-    sys_msg = "You are a timestamping and summarization expert. You are provided with a mapping of narration to its timestamp in seconds for the slide and a list of questions. Generate me a list of points that I can display on the slide along with their start_time and end_time according to the timestamps I have provided. Do not include the topic of the content in the points. Do not include any text which is present in both narration and questions and don't include any questions."
+    sys_msg = "You are a timestamping and summarization expert. You are provided with a mapping of narration to its timestamp in seconds for the slide and a list of questions. Generate me a list of points (complete sentences, not more than 5) that I can display on the slide along with their start time strictly according to the timestamps I have provided. Do not include the topic of the content in the points but do include an initial buffer time when providing the timestamping. Do not include any text which is present in both narration and questions and don't include any questions."
     
     prompt = f'Questions: {narration["questions"]}\nNarration with timestamps: {narration["audio"]["normalized_alignment"]}'
     narration["slide"] = get_structured_response(sys_msg, prompt, SlideContent)["slide"]

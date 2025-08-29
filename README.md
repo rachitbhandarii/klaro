@@ -25,24 +25,24 @@ VIDEO_TOPIC="Russia leaves nuclear arms treaty with us"
 ```
 klaro/
 ├─ node_modules/
-├─ out/                                           # contains final output -> {VIDEO_TOPIC}.mp4
+├─ out/                                 # contains final output -> {VIDEO_TOPIC}.mp4
 ├─ public/
-│ └─ {VIDEO_TOPIC}/                               # contains all the json and audio dump files
-│ ├─ audio/                                       # contains audio for each slide in mp3 format
-│ ├─ audio-json-dump/                             # contains json of base64 audio with timestamps
-│ ├─ final-content/                               # contains all round json file for video generation
-│ ├─ knowledge-graph-dump/                        # contains structured chunks of data from the web in json
-│ ├─ narration-audio/                             # contains json with narration audio in base64
-│ ├─ narration-outline/                           # contains json with outline of the video
-│ ├─ narration-script/                            # contains json with narration content
-│ └─ web-search-results/                          # contains json of urls per keyword
+│ └─ {VIDEO_TOPIC}/                     # contains all the json and audio dump files
+│ ├─ audio/                             # contains audio for each slide in mp3 format
+│ ├─ audio-json-dump/                   # contains json of base64 audio with timestamps
+│ ├─ final-content/                     # contains all round json file for video generation
+│ ├─ knowledge-graph-dump/              # contains structured chunks of data from the web in json
+│ ├─ narration-audio/                   # contains json with narration audio in base64
+│ ├─ narration-outline/                 # contains json with outline of the video
+│ ├─ narration-script/                  # contains json with narration content
+│ └─ web-search-results/                # contains json of urls per keyword
 ├─ src/
 │ ├─ index.css
 │ ├─ index.tsx
-│ ├─ Root.tsx                                     # contains components to be rendered
-│ ├─ Slide.tsx                                    # the gui template of each slide
-│ ├─ SlidesRenderer.tsx                           # handles chronology and transitions of slides
-│ ├─ BlankComponent.tsx                           # empty scene to be rendered in case no json is present
+│ ├─ Root.tsx                           # contains components to be rendered
+│ ├─ Slide.tsx                          # the gui template of each slide
+│ ├─ SlidesRenderer.tsx                 # handles chronology and transitions of slides
+│ ├─ BlankComponent.tsx                 # empty scene to be rendered in case no json is present
 │ └─ types.ts
 ├─ .prettierrc
 ├─ eslint.config.mjs
@@ -51,9 +51,9 @@ klaro/
 ├─ postcss.config.js
 ├─ remotion.config.ts
 ├─ tsconfig.json
-├─ pipeline.py                                    # structured data generation pipeline
-├─ requirements.txt                               # dependencies to be installed for pipeline.py
-├─ .env                                           # set VIDEO_TOPIC and other API keys
+├─ pipeline.py                          # structured data generation pipeline
+├─ requirements.txt                     # dependencies to be installed for pipeline.py
+├─ .env                                 # set VIDEO_TOPIC and other API keys
 └─ README.md
 ```
 
